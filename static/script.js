@@ -39,7 +39,23 @@ function appendMessage(sender, message) {
 // ===============================================
 function speakResponse(text) {
     if ('speechSynthesis' in window) {
-        const utterance = new SpeechSynthesisUtterance(text);
+        // 🚨 منطق تنظيف النص قبل القراءة (لإزالة الرموز) 🚨
+        let cleanedText = text;
+        
+        // 1. إزالة أي علامات تنسيق Markdown (النجمة *، الشرطة -، المربع #، الخط السفلي _)
+        cleanedText = cleanedText.replace(/[\*#\-\_]/g, ''); 
+        
+        // 2. إزالة الأقواس (تستخدم أحياناً في التفسير)
+        cleanedText = cleanedText.replace(/[\[\]\(\)]/g, '');
+        
+        // 3. إزالة العبارات العربية التي قد يخطئ في قراءتها البوت الصوتي الإنجليزي (مثل التفسيرات الطويلة)
+        cleanedText = cleanedText.replace(/صحح أي خطأ نحوي أو إملائي|اشرح التصحيح باختصار|اطرح سؤالاً واحداً مرتبطاً بموضوع المحادثة|الخطوة التالية/g, ''); 
+        
+        // 4. استبدال النقاط والفاصلات المتعددة بمسافة واحدة (لتحسين النطق)
+        cleanedText = cleanedText.replace(/(\.|\,){2,}/g, '. '); 
+        
+
+        const utterance = new SpeechSynthesisUtterance(cleanedText); // استخدام النص المنظف
         utterance.lang = 'en-US'; 
         speechSynthesis.speak(utterance);
     }
@@ -120,7 +136,6 @@ if ('webkitSpeechRecognition' in window) {
     recognition.onerror = (event) => {
         recordingStatus.classList.add('hidden');
         micButton.classList.remove('bg-green-500');
-        // هنا لم نعد نستخدم رسالة الخطأ القديمة، بل نعتمد على رسائل أخرى
         console.error('Speech recognition error:', event.error);
     };
 
